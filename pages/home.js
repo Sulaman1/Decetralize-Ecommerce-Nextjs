@@ -10,9 +10,11 @@ import {
     abi,
     abiEcommerce,
     abiEcommerceMarket,
+    abiRFID,
     contractAddresses,
     addressEcommerce,
     addressEcommerceMarket,
+    addressRFID,
 } from "../constants"
 
 export default function Home() {
@@ -20,6 +22,7 @@ export default function Home() {
     const [nftItems, setNftItems] = useState([])
     const [loadingState, setLoadingState] = useState("not-loaded")
     const [itemNo, setItemNo] = useState()
+    const [rfid, setRFID] = useState()
     const [tokenId, setTokenId] = useState()
     const [listingPrice, setListingPrice] = useState()
 
@@ -29,6 +32,7 @@ export default function Home() {
     const chainId = parseInt(chainIdHex)
     console.log("ChainId: ", chainId)
     const ecommerceAddress = chainId in addressEcommerce ? addressEcommerce[chainId][0] : null
+    const rfidAddress = chainId in addressRFID ? addressRFID[chainId][0] : null
     const ecommerceMarketAddress =
         chainId in addressEcommerceMarket ? addressEcommerceMarket[chainId][0] : null
 
@@ -126,44 +130,70 @@ export default function Home() {
         //let unsoldNfts = await mContract.methods.unsoldItemCount().call();
         console.log("Total NFTs: ", totalNFTs, "UnSold NFTs : ", unsoldNfts)
 
-        for (var i = 0; i < unsoldNfts; i++) {
-            // let unsoldNft = await mContract.methods.idToUnsoldMarketItem(i).call();
+        let unsoldNft
+        for (var i = 0; i < totalNFTs; i++) {
+            console.log("PRICE: ", Number(fetchAll[i].price))
+            if (fetchAll[i].sold == false) {
+                const optionsUnsold = {
+                    functionName: "getIdToUnsoldMarketItem",
+                    contractAddress: ecommerceMarketAddress,
+                    abi: abiEcommerceMarket,
+                    params: {
+                        item: i,
+                    },
+                }
 
-            const options = {
-                functionName: "tokenURI",
-                contractAddress: ecommerceAddress,
-                abi: abiEcommerce,
-                params: {
-                    tokenId: i,
-                },
+                unsoldNft = await Moralis.executeFunction(optionsUnsold)
+                console.log("UNSOLD ITEM: ", unsoldNft)
+                // let unsoldNft = await idToUnsoldMarketItem();
+
+                const optionsRFID = {
+                    functionName: "requestData",
+                    contractAddress: rfidAddress,
+                    abi: abiRFID,
+                    params: {},
+                }
+
+                const urfid = await Moralis.executeFunction(optionsRFID)
+                console.log("RFID : ", urfid)
+                setRFID(urfid)
+
+                const options = {
+                    functionName: "tokenURI",
+                    contractAddress: ecommerceAddress,
+                    abi: abiEcommerce,
+                    params: {
+                        tokenId: Number(unsoldNft.tokenId),
+                    },
+                }
+
+                const uri = await Moralis.executeFunction(options)
+
+                // const tokenUri1 = await nftContract.methods
+                //   .tokenURI(unsoldNft.tokenId)
+                //   .call();
+                // console.log("URI : ", uri)
+                const meta = await axios.get(uri)
+                let metaObj = JSON.parse(meta.data)
+                // console.log("META: ", metaObj)
+
+                let price = ethers.utils.formatUnits(fetchAll[i].price.toString())
+                // console.log("Price: ", price)
+
+                let obj = {
+                    price,
+                    tokenId: Number(fetchAll[i].tokenId),
+                    seller: fetchAll[i].seller,
+                    owner: fetchAll[i].owner,
+                    image: metaObj.image,
+                    name: metaObj.name,
+                    description: metaObj.description,
+                }
+                console.log("obj NFTs : ", obj)
+                setNfts((nfts) => [...nfts, obj])
+
+                setLoadingState("loaded")
             }
-
-            const uri = await Moralis.executeFunction(options)
-
-            // const tokenUri1 = await nftContract.methods
-            //   .tokenURI(unsoldNft.tokenId)
-            //   .call();
-            console.log("URI : ", uri)
-            const meta = await axios.get(uri)
-            let metaObj = JSON.parse(meta.data)
-            console.log("META: ", metaObj)
-
-            let price = ethers.utils.formatUnits(fetchAll[i].price.toString())
-            console.log("Price: ", price)
-
-            let obj = {
-                price,
-                tokenId: Number(fetchAll[i].tokenId),
-                seller: fetchAll[i].seller,
-                owner: fetchAll[i].owner,
-                image: metaObj.image,
-                name: metaObj.name,
-                description: metaObj.description,
-            }
-            console.log("obj NFTs : ", obj)
-            setNfts((nfts) => [...nfts, obj])
-
-            setLoadingState("loaded")
         }
     }
 
@@ -271,6 +301,9 @@ export default function Home() {
                                     <div className="p-4 bg-black">
                                         <p className="text-2xl mb-4 font-bold text-white">
                                             {nft.price} ETH
+                                        </p>
+                                        <p className="text-2xl mb-4 font-bold text-white">
+                                            RFID: {rfid.data}
                                         </p>
                                         <button
                                             className="w-full bg-pink-500 text-white font-bold py-2 px-12 rounded"

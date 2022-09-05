@@ -86,7 +86,7 @@ export default function MyAssets() {
                 contractAddress: ecommerceAddress,
                 abi: abiEcommerce,
                 params: {
-                    tokenId: i,
+                    tokenId: Number(fetchMyItems[i].tokenId),
                 },
             }
 

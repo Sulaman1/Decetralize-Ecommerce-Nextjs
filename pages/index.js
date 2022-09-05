@@ -6,8 +6,8 @@ export default function Home() {
     return (
         <div>
             <Head>
-                <title>Smart Contract Lottery</title>
-                <meta name="description" content="Our Smart Contract Lottery" />
+                <title>Smart Ecommrerce</title>
+                <meta name="description" content="Our Decentralize Ecommrerce" />
                 <link rel="icon" href="/favicon.ico" />
             </Head>
             <Header />

@@ -79,7 +79,7 @@ export default function CreatorDashboard() {
                         contractAddress: ecommerceAddress,
                         abi: abiEcommerce,
                         params: {
-                            tokenId: i,
+                            tokenId: Number(fetchCreated[i].tokenId),
                         },
                     }
 
@@ -104,6 +104,7 @@ export default function CreatorDashboard() {
                         image: metaObj.image,
                         name: metaObj.name,
                         description: metaObj.description,
+                        sold: fetchCreated[i].sold,
                     }
                     console.log("obj NFTs : ", obj)
                     setNfts((nfts) => [...nfts, obj])
