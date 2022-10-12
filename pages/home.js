@@ -6,6 +6,7 @@ import { ethers } from "ethers"
 import { useNotification, Button, Table, Input } from "web3uikit"
 import Header from "../components/Header"
 
+
 import {
     abi,
     abiEcommerce,
@@ -18,6 +19,8 @@ import {
 } from "../constants"
 
 export default function Home() {
+    
+
     const [nfts, setNfts] = useState([])
     const [nftItems, setNftItems] = useState([])
     const [loadingState, setLoadingState] = useState("not-loaded")
