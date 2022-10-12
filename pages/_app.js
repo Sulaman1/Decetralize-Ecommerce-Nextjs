@@ -5,9 +5,9 @@ import { NotificationProvider } from "web3uikit"
 function MyApp({ Component, pageProps }) {
     return (
         <MoralisProvider
-            appId="8PaeNrrCFy431ZRVHX4SN0uWz8zeFF4DHBp0JWGd"
-            serverUrl="https://yll9sdqjq8dn.usemoralis.com:2053/server"
-            masterKey="MRvDUd9LKpAq28lzutvSgyYJzc61kO2P3ZAJwwo4"
+            appId="X2qKufncqgFCSIDGUYvA5sKWw9jo89rcDPriPBjt"
+            serverUrl="https://ajungtl0k8i6.usemoralis.com:2053/server"
+            masterKey="gkdfygKAoLtJb98DIr2lZzcpJ62faTxNvlgcEfVv"
         >
             <NotificationProvider>
                 <Component {...pageProps} />

@@ -238,7 +238,7 @@ export default function CreateItem() {
                     <input
                         placeholder="NFT Price"
                         className="mt-8 border rounded p-4"
-                        onChange={(e) => setFormInput({ ...formInput, price: e.target.value })}
+                        onChange={(e) => setFormInput({ ...formInput, price: (e.target.value * "1000000000000000000").toString() })}
                     />
                     {/* <input
                     typr="file"

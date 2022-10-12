@@ -147,16 +147,16 @@ export default function Home() {
                 console.log("UNSOLD ITEM: ", unsoldNft)
                 // let unsoldNft = await idToUnsoldMarketItem();
 
-                const optionsRFID = {
-                    functionName: "requestData",
-                    contractAddress: rfidAddress,
-                    abi: abiRFID,
-                    params: {},
-                }
+                // const optionsRFID = {
+                //     functionName: "requestData",
+                //     contractAddress: rfidAddress,
+                //     abi: abiRFID,
+                //     params: {},
+                // }
 
-                const urfid = await Moralis.executeFunction(optionsRFID)
-                console.log("RFID : ", urfid)
-                setRFID(urfid)
+                // const urfid = await Moralis.executeFunction(optionsRFID)
+                // console.log("RFID : ", urfid)
+                // setRFID(urfid)
 
                 const options = {
                     functionName: "tokenURI",
@@ -302,9 +302,9 @@ export default function Home() {
                                         <p className="text-2xl mb-4 font-bold text-white">
                                             {nft.price} ETH
                                         </p>
-                                        <p className="text-2xl mb-4 font-bold text-white">
+                                        {/* <p className="text-2xl mb-4 font-bold text-white">
                                             RFID: {rfid.data}
-                                        </p>
+                                        </p> */}
                                         <button
                                             className="w-full bg-pink-500 text-white font-bold py-2 px-12 rounded"
                                             onClick={() => buyNFTs(nft)}
