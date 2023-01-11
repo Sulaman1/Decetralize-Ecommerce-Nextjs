@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react"
 import axios from "axios"
 import { useMoralis, useWeb3Contract } from "react-moralis"
-import Moralis from "moralis"
+// import Moralis from "moralis"
 import { ethers } from "ethers"
 import { useNotification, Button, Table, Input } from "web3uikit"
 import Header from "../components/Header"
 
+var baseURL = "https://ipfs.io/ipfs/"
 
 import {
     abi,
@@ -19,8 +20,6 @@ import {
 } from "../constants"
 
 export default function Home() {
-    
-
     const [nfts, setNfts] = useState([])
     const [nftItems, setNftItems] = useState([])
     const [loadingState, setLoadingState] = useState("not-loaded")
@@ -31,7 +30,7 @@ export default function Home() {
 
     const dispatch = useNotification()
 
-    const { chainId: chainIdHex, enableWeb3, isWeb3Enabled, account } = useMoralis()
+    const { chainId: chainIdHex, enableWeb3, Moralis, isWeb3Enabled, account } = useMoralis()
     const chainId = parseInt(chainIdHex)
     console.log("ChainId: ", chainId)
     const ecommerceAddress = chainId in addressEcommerce ? addressEcommerce[chainId][0] : null
@@ -117,6 +116,11 @@ export default function Home() {
         //     onError: (error) => console.log(error),
         // })
 
+        console.log(`
+        In LoadData: 
+        isWeb3Enabled: ${isWeb3Enabled}
+        `)
+
         let fetchAll = await fetchMarketItems({
             // onComplete
             // onSuccess: handleSuccess,
@@ -145,9 +149,10 @@ export default function Home() {
                         item: i,
                     },
                 }
-
-                unsoldNft = await Moralis.executeFunction(optionsUnsold)
-                console.log("UNSOLD ITEM: ", unsoldNft)
+                if (isWeb3Enabled) {
+                    unsoldNft = await Moralis.executeFunction(optionsUnsold)
+                    console.log("UNSOLD ITEM: ", unsoldNft)
+                }
                 // let unsoldNft = await idToUnsoldMarketItem();
 
                 // const optionsRFID = {
@@ -175,10 +180,10 @@ export default function Home() {
                 // const tokenUri1 = await nftContract.methods
                 //   .tokenURI(unsoldNft.tokenId)
                 //   .call();
-                // console.log("URI : ", uri)
-                const meta = await axios.get(uri)
-                let metaObj = JSON.parse(meta.data)
-                // console.log("META: ", metaObj)
+                console.log("URI : ", uri)
+                const meta = await axios.get(baseURL + uri)
+                // let metaObj = JSON.parse(meta.data)
+                // console.log("META: ", meta.data)
 
                 let price = ethers.utils.formatUnits(fetchAll[i].price.toString())
                 // console.log("Price: ", price)
@@ -188,9 +193,9 @@ export default function Home() {
                     tokenId: Number(fetchAll[i].tokenId),
                     seller: fetchAll[i].seller,
                     owner: fetchAll[i].owner,
-                    image: metaObj.image,
-                    name: metaObj.name,
-                    description: metaObj.description,
+                    image: meta.data.image,
+                    name: meta.data.name,
+                    description: meta.data.description,
                 }
                 console.log("obj NFTs : ", obj)
                 setNfts((nfts) => [...nfts, obj])
@@ -203,7 +208,8 @@ export default function Home() {
     async function buyNFTs(nft) {
         const price = ethers.utils.parseUnits(nft.price.toString())
 
-        let listingPrice = (await getListingPrice()).toString()
+        let listingPrice = ethers.utils.parseUnits((await getListingPrice()).toString(), "wei")
+        listingPrice = parseFloat(price) + parseFloat(listingPrice)
 
         console.log(`
         Price in Buy:  ${price} 
@@ -233,18 +239,21 @@ export default function Home() {
     }, [tokenId, listingPrice])
 
     useEffect(() => {
-        if (!isWeb3Enabled) {
-            enableWeb3()
-        }
+        async function init() {
+            if (!isWeb3Enabled) {
+                await enableWeb3()
+            }
 
-        if (isWeb3Enabled) {
-            console.log(`
+            if (isWeb3Enabled) {
+                console.log(`
             WEB3 enable:  ${isWeb3Enabled}
             E Address: ${ecommerceAddress}
             M Address: ${ecommerceMarketAddress}
         `)
-            loadData()
+                loadData()
+            }
         }
+        init()
     }, [isWeb3Enabled])
 
     const handleSuccess = async function (tx) {
@@ -262,16 +271,16 @@ export default function Home() {
         // location.reload()
     }
 
-    async function load() {
-        console.log("Load")
-        await loadData()
-    }
+    // async function load() {
+    //     console.log("Load")
+    //     await loadData()
+    // }
 
     if (loadingState === "loaded" && !nfts.length) return <h1>Loaded No Items Available</h1>
     if (!nfts.length)
         return (
             <div>
-                <button onClick={load}>Load</button>
+                {/* <button onClick={load}>Load</button> */}
                 <h1>Loading Plzzzz Wait loading state: {loadingState}</h1>
             </div>
         )
@@ -289,7 +298,7 @@ export default function Home() {
                                     key={key}
                                     className="border shadow rounded-xl overflow-hidden"
                                 >
-                                    <img src={nft.image} />
+                                    <img src={baseURL + nft.image} />
                                     <div>
                                         <p
                                             style={{ height: "64px" }}

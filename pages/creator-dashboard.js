@@ -1,10 +1,12 @@
 import { useMoralis, useWeb3Contract } from "react-moralis"
 import { useEffect, useState } from "react"
-import Moralis from "moralis"
+// import Moralis from "moralis"
 import axios from "axios"
 import { ethers } from "ethers"
 import { useNotification, Button, Table, Input } from "web3uikit"
 import Header from "../components/Header"
+
+var baseURL = "https://ipfs.io/ipfs/"
 
 import {
     abi,
@@ -20,7 +22,7 @@ export default function CreatorDashboard() {
     const [sold, setSold] = useState([])
     const [loadingState, setLoadingState] = useState("not-loaded")
 
-    const { chainId: chainIdHex, enableWeb3, isWeb3Enabled, account } = useMoralis()
+    const { chainId: chainIdHex, enableWeb3, Moralis, isWeb3Enabled, account } = useMoralis()
     const chainId = parseInt(chainIdHex)
     console.log("ChainId: ", chainId)
     const ecommerceAddress = chainId in addressEcommerce ? addressEcommerce[chainId][0] : null
@@ -89,9 +91,9 @@ export default function CreatorDashboard() {
                     //   .tokenURI(unsoldNft.tokenId)
                     //   .call();
                     console.log("URI : ", uri)
-                    const meta = await axios.get(uri)
-                    let metaObj = JSON.parse(meta.data)
-                    console.log("META: ", metaObj)
+                    const meta = await axios.get(baseURL + uri)
+                    // let metaObj = JSON.parse(meta.data)
+                    console.log("META: ", meta)
 
                     let price = ethers.utils.formatUnits(fetchCreated[i].price.toString())
                     console.log("Price: ", price)
@@ -101,9 +103,9 @@ export default function CreatorDashboard() {
                         tokenId: Number(fetchCreated[i].tokenId),
                         seller: fetchCreated[i].seller,
                         owner: fetchCreated[i].owner,
-                        image: metaObj.image,
-                        name: metaObj.name,
-                        description: metaObj.description,
+                        image: meta.data.image,
+                        name: meta.data.name,
+                        description: meta.data.description,
                         sold: fetchCreated[i].sold,
                     }
                     console.log("obj NFTs : ", obj)
@@ -133,7 +135,7 @@ export default function CreatorDashboard() {
                     {nfts.map((nft, i) => {
                         return (
                             <div key={i} className="border shadow rounded-xl overflow-hidden">
-                                <img src={nft.image} className="rounded" />
+                                <img src={baseURL + nft.image} className="rounded" />
                                 <div className="p-4 bg-black">
                                     <p className="text-2xl font-bold text-white">
                                         Price - {nft.price} ETH

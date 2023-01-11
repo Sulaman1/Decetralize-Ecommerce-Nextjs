@@ -4,10 +4,15 @@ import Moralis from "moralis"
 import { ethers } from "ethers"
 import { useNotification, Button, Table, Input } from "web3uikit"
 
-import { create, create as ipfsHttpClient } from "ipfs-http-client"
+import { create } from "ipfs-http-client"
+import * as IPFS from "ipfs-core"
+// import { create } from "ipfs-client"
+
 import { useRouter } from "next/router" //next/dist/client/router
 
 import Header from "../components/Header"
+
+var baseURL = "https://ipfs.io/ipfs/"
 
 import {
     abi,
@@ -18,7 +23,17 @@ import {
     addressEcommerceMarket,
 } from "../constants"
 
-const client = ipfsHttpClient("https://ipfs.infura.io:5001/api/v0")
+// const client = ipfsHttpClient("https://ipfs.infura.io:5001/api/v0")
+
+// const client = create({
+//     grpc: "/ip4/127.0.0.1/tcp/5003/ws",
+//     http: "/ip4/127.0.0.1/tcp/5002/http",
+// })
+
+//https://ipfs.infura.io:5001/api/v0
+//http://127.0.0.1:5001
+
+const client = create("http://127.0.0.1:5001")
 
 export default function CreateItem() {
     const [fileUrl, setFileUrl] = useState(null)
@@ -37,7 +52,7 @@ export default function CreateItem() {
     const ecommerceMarketAddress =
         chainId in addressEcommerceMarket ? addressEcommerceMarket[chainId][0] : null
 
-    // const Moralis = useMoralis()
+    const Moralis = useMoralis()
     const { authenticate, isAuthenticated, user } = useMoralis()
 
     useEffect(() => {
@@ -76,7 +91,6 @@ export default function CreateItem() {
             message: "Transaction Complete",
             title: "Tx Notification",
             position: "topR",
-            icon: "bell",
         })
         // location.reload()
     }
@@ -123,21 +137,67 @@ export default function CreateItem() {
         params: {},
     })
 
+    function ipfsUpload() {
+        const ipfs = window.IpfsHttpClient({ host: "ipfs.infura.io", port: 5001 })
+
+        document.querySelector("#fileUpload").addEventListener(
+            "change",
+            function () {
+                document.getElementById("ipfs_hash").innerHTML = "<b>Uploading...Please wait</b>"
+
+                var reader = new FileReader()
+                reader.onload = function () {
+                    var arrayBuffer = this.result,
+                        array = new Uint8Array(arrayBuffer),
+                        binaryString = String.fromCharCode.apply(null, array)
+
+                    //console.log(result)
+                    ipfs.add(binaryString, (err, result) => {
+                        console.log(result)
+                        document.getElementById("ipfs_hash").innerHTML =
+                            "<b>IPFS Hash of uploded file: </b>" + result[0].hash
+                    })
+                }
+                reader.readAsArrayBuffer(this.files[0])
+            },
+            false
+        )
+    }
+
     async function onChange(e) {
+        console.log("Uploading Pic to IPFS")
         const img = e.target.files[0]
+        console.log("image: ", img)
+
         try {
-            console.log("Image: ", img.name)
-            const file = new Moralis.File("imgname", img)
-            await file.saveIPFS({ useMasterKey: true })
+            // const node = await IPFS.create()
+            const id = await client.id()
+            const fileAdded = await client.add(img)
 
             console.log(`
-                Full Path: ${file.ipfs()}
-                Hash:  ${file.hash()}
-                `)
-            setFileUrl(file.ipfs())
-        } catch (err) {
-            console.log(err)
-        }
+            id: ${JSON.stringify(id)}`)
+
+            // const fileAdded = await node.add({
+            //     img,
+            // })
+
+            console.log("Added file:", fileAdded)
+            setFileUrl(fileAdded.path)
+        } catch (err) {}
+
+        // try {
+        //     console.log("Image: ", img.name)
+        //     const file = new Moralis.File("imgname", img)
+        //     await file.saveIPFS({ useMasterKey: true })
+
+        //     console.log(`
+        //         Full Path: ${file.ipfs()}
+        //         Hash:  ${file.hash()}
+        //         `)
+        //     setFileUrl(file.ipfs())
+        // } catch (err) {
+        //     console.log(err)
+        // }
     }
 
     async function createItem() {
@@ -153,12 +213,16 @@ export default function CreateItem() {
         let file
 
         try {
-            file = new Moralis.File("metadata", {
-                base64: btoa(JSON.stringify(data)),
-            })
+            // const node = await IPFS.create()
+            // const id = await client.id()
 
-            await file.saveIPFS({ useMasterKey: true })
-            setMetaDataUrl(file.ipfs())
+            const id = await client.id()
+            const fileAdded = await client.add(data)
+
+            // const fileAdded = await node.add({
+            //     data,
+            // })
+            setMetaDataUrl(fileAdded.path)
 
             let tokenId = await _tokenIds()
             setTokenId(tokenId)
@@ -171,17 +235,49 @@ export default function CreateItem() {
                 Listing Price: ${lp}
             `)
 
-            let url = file.ipfs()
+            let url = fileAdded.path
             console.log("Metadata URL : ", url)
 
             console.log(`
-                Full Path: ${file.ipfs()}
-                Hash:  ${file.hash()}
+                Full Path: ${fileAdded.path}
+                Hash:  ${fileAdded.cid}
                 `)
-            // createSale(url)
+
+            console.log("Added file:", fileAdded.path, fileAdded.cid)
         } catch (err) {
             console.log(err)
         }
+
+        // try {
+        //     file = new Moralis.File("metadata", {
+        //         base64: btoa(JSON.stringify(data)),
+        //     })
+
+        //     await file.saveIPFS({ useMasterKey: true })
+        //     setMetaDataUrl(file.ipfs())
+
+        //     let tokenId = await _tokenIds()
+        //     setTokenId(tokenId)
+
+        //     let lp = (await getListingPrice()).toString()
+        //     setListingPrice(lp)
+
+        //     console.log(`
+        //         tokenId: ${tokenId}
+        //         Listing Price: ${lp}
+        //     `)
+
+        //     let url = file.ipfs()
+        //     console.log("Metadata URL : ", url)
+
+        //     console.log(`
+        //         Full Path: ${file.ipfs()}
+        //         Hash:  ${file.hash()}
+        //         `)
+        //     // createSale(url)
+        // } catch (err) {
+        //     console.log(err)
+        // }
     }
 
     async function createProduct() {
@@ -238,7 +334,12 @@ export default function CreateItem() {
                     <input
                         placeholder="NFT Price"
                         className="mt-8 border rounded p-4"
-                        onChange={(e) => setFormInput({ ...formInput, price: (e.target.value * "1000000000000000000").toString() })}
+                        onChange={(e) =>
+                            setFormInput({
+                                ...formInput,
+                                price: (e.target.value * "1000000000000000000").toString(),
+                            })
+                        }
                     />
                     {/* <input
                     typr="file"
@@ -253,7 +354,9 @@ export default function CreateItem() {
                         // style={{width: '250px', margin: '0px 0px 10px 0px', backgroundColor: '#753a88'}}
                     />
 
-                    {fileUrl && <img className="rounded mt-4" width="350" src={fileUrl} />}
+                    {fileUrl && (
+                        <img className="rounded mt-4" width="350" src={baseURL + fileUrl} />
+                    )}
                     <button
                         onClick={createItem}
                         className="font-bold mt-4 bg-pink-500 text-white rounded p-4 shadow-lg"
