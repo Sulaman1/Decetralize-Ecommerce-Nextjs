@@ -1,10 +1,12 @@
 import { useMoralis, useWeb3Contract } from "react-moralis"
 import { useEffect, useState } from "react"
-import Moralis from "moralis"
+// import Moralis from "moralis"
 import axios from "axios"
 import { ethers } from "ethers"
 import { useNotification, Button, Table, Input } from "web3uikit"
 import Header from "../components/Header"
+
+var baseURL = "https://ipfs.io/ipfs/"
 
 import {
     abi,
@@ -19,7 +21,7 @@ export default function MyAssets() {
     const [nfts, setNfts] = useState([])
     const [loadingState, setLoadingState] = useState("not-loaded")
 
-    const { chainId: chainIdHex, enableWeb3, isWeb3Enabled, account } = useMoralis()
+    const { chainId: chainIdHex, enableWeb3, Moralis, isWeb3Enabled, account } = useMoralis()
     const chainId = parseInt(chainIdHex)
     console.log("ChainId: ", chainId)
     const ecommerceAddress = chainId in addressEcommerce ? addressEcommerce[chainId][0] : null
@@ -52,18 +54,36 @@ export default function MyAssets() {
     })
 
     useEffect(() => {
-        console.log("IsWeb3Enabled: ", isWeb3Enabled)
-
-        if (!isWeb3Enabled) {
-            enableWeb3()
-        }
-        if (isWeb3Enabled) {
-            async function load() {
-                await loadData()
+        async function init() {
+            if (!isWeb3Enabled) {
+                await enableWeb3()
             }
-            load()
+
+            if (isWeb3Enabled) {
+                console.log(`
+            WEB3 enable:  ${isWeb3Enabled}
+            E Address: ${ecommerceAddress}
+            M Address: ${ecommerceMarketAddress}
+        `)
+                loadData()
+            }
         }
+        init()
     }, [isWeb3Enabled])
+
+    // useEffect(() => {
+    //     console.log("IsWeb3Enabled: ", isWeb3Enabled)
+
+    //     if (!isWeb3Enabled) {
+    //         enableWeb3()
+    //     }
+    //     if (isWeb3Enabled) {
+    //         async function load() {
+    //             await loadData()
+    //         }
+    //         load()
+    //     }
+    // }, [isWeb3Enabled])
 
     async function loadData() {
         let fetchMyItems = await fetchMyNFTs({
@@ -96,9 +116,9 @@ export default function MyAssets() {
             //   .tokenURI(unsoldNft.tokenId)
             //   .call();
             console.log("URI : ", uri)
-            const meta = await axios.get(uri)
-            let metaObj = JSON.parse(meta.data)
-            console.log("META: ", metaObj)
+            const meta = await axios.get(baseURL + uri)
+            // let metaObj = JSON.parse(meta.data)
+            console.log("META: ", meta)
 
             let price = ethers.utils.formatUnits(fetchMyItems[i].price.toString())
             console.log("Price: ", price)
@@ -108,9 +128,9 @@ export default function MyAssets() {
                 tokenId: Number(fetchMyItems[i].tokenId),
                 seller: fetchMyItems[i].seller,
                 owner: fetchMyItems[i].owner,
-                image: metaObj.image,
-                name: metaObj.name,
-                description: metaObj.description,
+                image: meta.data.image,
+                name: meta.data.name,
+                description: meta.data.description,
             }
             console.log("obj NFTs : ", obj)
             setNfts((nfts) => [...nfts, obj])
@@ -132,7 +152,7 @@ export default function MyAssets() {
                         {nfts.map((nft, i) => {
                             return (
                                 <div key={i} className="border shadow rounded-xl overflow-hidden">
-                                    <img src={nft.image} className="rounded" />
+                                    <img src={baseURL + nft.image} className="rounded" />
                                     <div className="p-4 bg-black">
                                         <p className="text-22xl font-bold textt-white">
                                             Price - {nft.price}
